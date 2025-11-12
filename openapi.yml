@@ -1,87 +1,91 @@
 openapi: 3.0.3
 info:
-  title: Easyapp API
+  title: Easyappz Auth API
   version: 1.0.0
-  description: API documentation for easyapp
+servers:
+  - url: /
 paths:
   /api/auth/register:
     post:
-      operationId: auth_register
-      description: Register a new member
-      tags:
-        - auth
-      security: []
+      summary: Регистрация нового пользователя
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              type: object
+              required: [name, email, password]
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
       responses:
         '201':
-          description: Member created
+          description: Создано
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Member'
         '400':
-          description: Validation error
+          description: Ошибка валидации
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailError'
+                $ref: '#/components/schemas/Error'
   /api/auth/login:
     post:
-      operationId: auth_login
-      description: Login with email and password
-      tags:
-        - auth
-      security: []
+      summary: Авторизация пользователя
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
       responses:
         '200':
-          description: Login success
+          description: Успешно
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginResponse'
+                type: object
+                properties:
+                  token:
+                    type: string
+                  member:
+                    $ref: '#/components/schemas/Member'
         '400':
-          description: Invalid credentials
+          description: Неверные данные
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailError'
+                $ref: '#/components/schemas/Error'
   /api/profile:
     get:
-      operationId: profile_get
-      description: Get current member profile
-      tags:
-        - profile
+      summary: Профиль текущего пользователя
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: Member profile
+          description: Данные профиля
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Member'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailError'
+          description: Неавторизован
     put:
-      operationId: profile_update
-      description: Update current member profile (name, email)
-      tags:
-        - profile
+      summary: Обновление профиля
       security:
         - bearerAuth: []
       requestBody:
@@ -89,32 +93,31 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/MemberUpdate'
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
       responses:
         '200':
-          description: Updated member profile
+          description: Обновлено
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Member'
         '400':
-          description: Validation error
+          description: Ошибка
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailError'
+                $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailError'
+          description: Неавторизован
   /api/password/change:
     post:
-      operationId: password_change
-      description: Change password for current member
-      tags:
-        - auth
+      summary: Смена пароля
       security:
         - bearerAuth: []
       requestBody:
@@ -122,119 +125,52 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ChangePasswordRequest'
+              type: object
+              required: [old_password, new_password]
+              properties:
+                old_password:
+                  type: string
+                new_password:
+                  type: string
       responses:
         '200':
-          description: Password changed
+          description: Успешно
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ChangePasswordResponse'
+                type: object
+                properties:
+                  message:
+                    type: string
         '400':
-          description: Validation error
+          description: Ошибка
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/DetailError'
+                $ref: '#/components/schemas/Error'
         '401':
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/DetailError'
+          description: Неавторизован
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     Member:
       type: object
       properties:
         id:
           type: integer
-          readOnly: true
         name:
           type: string
-          maxLength: 150
         email:
           type: string
           format: email
-      required:
-        - id
-        - name
-        - email
-    MemberUpdate:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 150
-        email:
-          type: string
-          format: email
-      required:
-        - name
-        - email
-    RegisterRequest:
-      type: object
-      properties:
-        name:
-          type: string
-          maxLength: 150
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-          minLength: 6
-      required:
-        - name
-        - email
-        - password
-    LoginRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-        password:
-          type: string
-      required:
-        - email
-        - password
-    LoginResponse:
-      type: object
-      properties:
-        token:
-          type: string
-        member:
-          $ref: '#/components/schemas/Member'
-      required:
-        - token
-        - member
-    ChangePasswordRequest:
-      type: object
-      properties:
-        old_password:
-          type: string
-        new_password:
-          type: string
-          minLength: 6
-      required:
-        - old_password
-        - new_password
-    ChangePasswordResponse:
-      type: object
-      properties:
-        message:
-          type: string
-      required:
-        - message
-    DetailError:
+    Error:
       type: object
       properties:
         detail:
-          nullable: true
-      additionalProperties: true
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
+          oneOf:
+            - type: string
+            - type: object

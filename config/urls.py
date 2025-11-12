@@ -17,8 +17,24 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
+from django.conf import settings
+from pathlib import Path
+
+BASE_DIR = Path(settings.BASE_DIR) if hasattr(settings, "BASE_DIR") else Path(__file__).resolve().parent.parent
+
+
+def openapi_view(request):
+    file_path = BASE_DIR / "openapi.yml"
+    try:
+        content = file_path.read_text(encoding="utf-8")
+    except Exception:
+        return HttpResponse("openapi not found", status=404)
+    return HttpResponse(content, content_type="text/yaml")
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("api.urls")),
+    path("openapi.yml", openapi_view, name="openapi"),
 ]
